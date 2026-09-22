@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Virtual Friendship Garden 🌱</title>
+    <!-- Tailwind CSS for modern responsive utility styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Material Symbols Outlined -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        soil: '#5c4033',
+                        'soil-dry': '#8c6d58',
+                        sage: '#789461',
+                        terracotta: '#d97706',
+                        cream: '#fdfbf7',
+                        nightsky: '#111827',
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'Cambria', 'serif'],
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom UI and Animation Styles */
+        :root {
+            --bg-gradient: linear-gradient(to bottom, #e0f2fe, #fef3c7);
+            --garden-grass: #86efac;
+            --particle-color: rgba(255, 255, 255, 0.7);
+        }
+
+        body.theme-morning {
+            --bg-gradient: linear-gradient(to bottom, #fef3c7, #fde68a, #d9f99d);
+            color: #1e293b;
+        }
+        body.theme-afternoon {
+            --bg-gradient: linear-gradient(to bottom, #bae6fd, #e0f2fe, #bbf7d0);
+            color: #0f172a;
+        }
+        body.theme-evening {
+            --bg-gradient: linear-gradient(to bottom, #fed7aa, #f43f5e, #881337);
+            color: #fff1f2;
+        }
+        body.theme-night {
+            --bg-gradient: linear-gradient(to bottom, #0f172a, #1e1b4b, #311042);
+            color: #f8fafc;
+        }
+
+        .garden-bg {
+            background: var(--bg-gradient);
+            transition: background 2s ease-in-out;
+        }
+
+        /* SVG Swaying Plant Animation */
+        @keyframes plantSway {
+            0% { transform: rotate(-2deg) scale(1); }
+            50% { transform: rotate(2deg) scale(1.01); }
+            100% { transform: rotate(-2deg) scale(1); }
+        }
+        .animate-sway {
+            animation: plantSway 4.5s ease-in-out infinite;
+            transform-origin: bottom center;
+        }
+
+        /* Float Particles */
+        @keyframes floatUp {
+            0% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+            50% { transform: translateY(-25px) rotate(10deg); opacity: 1; }
+            100% { transform: translateY(-50px) rotate(-10deg); opacity: 0; }
+        }
+        .particle-floating {
+            animation: floatUp 3s ease-out forwards;
+            position: absolute;
+            pointer-events: none;
+        }
+
+        /* Weather Rain Drops */
+        @keyframes rainFall {
+            0% { transform: translateY(-20px) translateX(0); opacity: 0.8; }
+            100% { transform: translateY(100vh) translateX(-30px); opacity: 0.2; }
+        }
+        .rain-drop {
+            position: absolute;
+            width: 2px;
+            height: 14px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(147,197,253,0.3));
+            animation: rainFall 0.8s linear infinite;
+            pointer-events: none;
+        }
+
+        /* Firefly Glow */
+        @keyframes fireflyGlow {
+            0%, 100% { opacity: 0.2; transform: scale(0.8) translate(0, 0); }
+            50% { opacity: 0.9; transform: scale(1.3) translate(10px, -15px); }
+        }
+        .firefly-node {
+            animation: fireflyGlow 3.5s ease-in-out infinite alternate;
+        }
+
+        /* Soil Patch Styling */
+        .soil-mound {
+            box-shadow: inset 0 6px 12px rgba(0,0,0,0.35), 0 8px 16px rgba(0,0,0,0.15);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .soil-mound:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.25), 0 12px 24px rgba(0,0,0,0.2);
+        }
+
+        /* Custom Scrollbar for Journal */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 8px; }
+
+        .modal-enter { animation: modalFadeIn 0.25s ease-out forwards; }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Material Symbols Default Utility Styling */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            display: inline-block;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="h-full w-full garden-bg font-sans select-none overflow-hidden flex flex-col transition-colors duration-1000">
+
+    <!-- Weather & Dynamic Sky Layer -->
+    <div id="weather-overlay" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+    <!-- Main Container -->
+    <div class="relative flex-1 flex flex-col h-full max-w-4xl mx-auto w-full px-4 py-3 z-20">
+
+        <!-- Top Navigation / Header -->
+        <header class="flex items-center justify-between bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl p-3 shadow-sm border border-white/40 dark:border-slate-700/50 mb-3">
+            <div>
+                <h1 class="text-xl md:text-2xl font-serif font-bold tracking-tight flex items-center gap-2">
+                    <span>Virtual Friendship Garden</span>
+                    <span class="text-lg">🌱</span>
+                </h1>
+                <p id="env-status" class="text-xs md:text-sm text-slate-600 dark:text-slate-300 font-medium">
+                    ☀️ Golden Afternoon • Clear Sky
+                </p>
+            </div>
+
+            <!-- Header Quick Action Buttons -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <button onclick="openJournalModal()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 text-xs md:text-sm font-semibold hover:bg-emerald-200 transition flex items-center gap-1">
+                    <span class="material-symbols-outlined text-base">menu_book</span>
+                    <span class="hidden sm:inline">Journal</span>
+                </button>
+                <button onclick="openAchievementsModal()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 text-xs md:text-sm font-semibold hover:bg-amber-200 transition flex items-center gap-1">
+                    <span class="material-symbols-outlined text-base">military_tech</span>
+                    <span class="hidden sm:inline">Badges</span>
+                </button>
+                <button onclick="openSettingsModal()" class="p-2 rounded-xl bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 transition text-sm flex items-center justify-center" title="Settings">
+                    <span class="material-symbols-outlined text-lg">settings</span>
+                </button>
+                <button id="btn-audio" onclick="toggleAudioMute()" class="p-2 rounded-xl bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 transition text-sm flex items-center justify-center" title="Toggle Sound">
+                    <span class="material-symbols-outlined text-lg">volume_up</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Garden Interactive Canvas / Grid View -->
+        <main class="flex-1 relative flex flex-col justify-center items-center my-auto min-h-0">
+            
+            <!-- Garden Decorative Signpost -->
+            <div class="absolute top-2 left-2 z-10 hidden sm:flex items-center gap-2 bg-amber-900/80 text-amber-100 text-xs px-3 py-1.5 rounded-lg border border-amber-700 shadow-md">
+                <span>🪧</span>
+                <span id="garden-sign-text" class="font-serif italic">"Where memories bloom softly."</span>
+            </div>
+
+            <!-- Dynamic Weather Controls (Quick Toggle) -->
+            <div class="absolute top-2 right-2 z-10 flex gap-1 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm p-1 rounded-xl border border-white/20">
+                <button onclick="setWeather('clear')" class="p-1 rounded-lg hover:bg-white/50 text-xs" title="Clear Sky">☀️</button>
+                <button onclick="setWeather('rain')" class="p-1 rounded-lg hover:bg-white/50 text-xs" title="Gentle Rain">🌧️</button>
+                <button onclick="setWeather('mist')" class="p-1 rounded-lg hover:bg-white/50 text-xs" title="Soft Mist">🌫️</button>
+            </div>
+
+            <!-- The Garden Soil Grid Container -->
+            <div class="w-full max-w-xl mx-auto px-2">
+                <div id="garden-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-3 sm:gap-4 p-4 rounded-3xl bg-amber-950/20 dark:bg-black/30 backdrop-blur-sm border border-amber-900/20 shadow-2xl relative">
+                    <!-- Soil plots populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Unlocked Garden Decorations Bar -->
+            <div id="garden-decorations" class="w-full max-w-lg mt-3 flex justify-center items-center gap-4 text-xl opacity-90">
+                <!-- Decorative elements dynamically added based on progression -->
+            </div>
+        </main>
+
+        <!-- Bottom Action Toolbar -->
+        <footer class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-2.5 shadow-lg border border-white/50 dark:border-slate-800 flex items-center justify-around mt-2">
+            
+            <button id="mode-inspect" onclick="setInteractionMode('inspect')" class="flex-1 flex flex-col items-center py-1.5 px-2 rounded-xl transition font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-200">
+                <span class="material-symbols-outlined text-lg sm:text-xl">search</span>
+                <span>Inspect</span>
+            </button>
+
+            <button id="mode-plant" onclick="setInteractionMode('plant')" class="flex-1 flex flex-col items-center py-1.5 px-2 rounded-xl transition font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-200">
+                <span class="text-lg sm:text-xl">🌱</span>
+                <span>Plant Seed</span>
+            </button>
+
+            <button id="mode-water" onclick="setInteractionMode('water')" class="flex-1 flex flex-col items-center py-1.5 px-2 rounded-xl transition font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-200">
+                <span class="material-symbols-outlined text-lg sm:text-xl">water_drop</span>
+                <span>Water</span>
+            </button>
+
+            <button id="mode-care" onclick="pruneThirstyPlants()" class="flex-1 flex flex-col items-center py-1.5 px-2 rounded-xl transition font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-200">
+                <span class="material-symbols-outlined text-lg sm:text-xl">cleaning_services</span>
+                <span>Tidy Garden</span>
+            </button>
+
+        </footer>
+    </div>
+
+    <!-- MODAL 1: Planting Modal -->
+    <div id="modal-plant" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-800 modal-enter max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-serif font-bold flex items-center gap-2">
+                    <span>🌱 Plant a New Seed</span>
+                </h2>
+                <button onclick="closeModal('modal-plant')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">✕</button>
+            </div>
+
+            <form id="form-plant" onsubmit="handlePlantSubmit(event)" class="space-y-4">
+                
+                <!-- Species Selection Grid -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Choose Flower Species</label>
+                    <div id="species-selector-grid" class="grid grid-cols-4 gap-2">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Plant Name / Title -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Flower Name / Title</label>
+                    <input type="text" id="input-plant-name" required maxlength="32" placeholder="e.g. Dream Trip to Japan, Friendship with Sarah" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <!-- Meaning Category -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Personal Meaning Category</label>
+                    <select id="input-plant-category" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="Memory">💭 Memory</option>
+                        <option value="Goal">🎯 Goal</option>
+                        <option value="Achievement">🏆 Achievement</option>
+                        <option value="Friendship">🤍 Friendship</option>
+                        <option value="Gratitude">✨ Gratitude</option>
+                        <option value="Dream">🌟 Dream</option>
+                        <option value="Custom">🌿 Personal</option>
+                    </select>
+                </div>
+
+                <!-- Personal Note / Story -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Personal Memory / Short Note</label>
+                    <textarea id="input-plant-note" rows="3" maxlength="200" placeholder="Write a gentle reminder or cherished memory to hold in this flower..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeModal('modal-plant')" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 shadow-md shadow-emerald-600/30 transition">
+                        Plant Seed 🌱
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Memory / Flower Detail Modal -->
+    <div id="modal-view-flower" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-800 modal-enter relative overflow-hidden">
+            
+            <div id="detail-flower-header-bg" class="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-emerald-100 to-teal-50 dark:from-emerald-950/40 dark:to-teal-900/30 pointer-events-none"></div>
+
+            <div class="relative z-10">
+                <div class="flex justify-between items-start mb-2">
+                    <span id="detail-category-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-900/80 dark:text-emerald-200">
+                        Memory
+                    </span>
+                    <button onclick="closeModal('modal-view-flower')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">✕</button>
+                </div>
+
+                <!-- Preview Display -->
+                <div class="flex items-center gap-4 my-3">
+                    <div id="detail-flower-svg-preview" class="w-20 h-20 bg-amber-900/10 rounded-2xl p-2 flex items-center justify-center border border-amber-900/20">
+                        <!-- SVG graphic injected -->
+                    </div>
+                    <div>
+                        <h3 id="detail-flower-name" class="text-lg font-serif font-bold leading-tight">Flower Name</h3>
+                        <p id="detail-flower-species-meta" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Tulip • Stage: Bloom</p>
+                        <p id="detail-flower-date" class="text-xs text-slate-400 mt-0.5">Planted Sep 22, 2026</p>
+                    </div>
+                </div>
+
+                <!-- Memory Note Card -->
+                <div class="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/60 my-4">
+                    <p id="detail-flower-note" class="text-sm italic leading-relaxed text-slate-700 dark:text-slate-200">
+                        "Your note will appear here."
+                    </p>
+                </div>
+
+                <!-- Status & Care Bar -->
+                <div class="space-y-2 mb-4">
+                    <div class="flex justify-between text-xs text-slate-500 font-medium">
+                        <span>Growth Progress</span>
+                        <span id="detail-growth-percent">80%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                        <div id="detail-growth-bar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 80%"></div>
+                    </div>
+                    <p id="detail-thirst-status" class="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-1">
+                        💧 Moist and happy!
+                    </p>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="flex gap-2 pt-2">
+                    <button onclick="waterCurrentDetailPlant()" class="flex-1 py-2 rounded-xl bg-sky-500 text-white font-semibold text-xs hover:bg-sky-600 transition flex items-center justify-center gap-1">
+                        <span>💧 Water</span>
+                    </button>
+                    <button onclick="editCurrentDetailNote()" class="py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                        ✏️ Edit Note
+                    </button>
+                    <button onclick="uprootCurrentDetailPlant()" class="py-2 px-3 rounded-xl border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 font-semibold text-xs hover:bg-red-50 dark:hover:bg-red-950/50 transition">
+                        🗑️ Move
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Garden Journal Modal -->
+    <div id="modal-journal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 dark:border-slate-800 modal-enter max-h-[85vh] flex flex-col">
+            
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-serif font-bold flex items-center gap-2">
+                    <span>📖 Garden Journal & Memories</span>
+                </h2>
+                <button onclick="closeModal('modal-journal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">✕</button>
+            </div>
+
+            <!-- Stats Overview Row -->
+            <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-100 dark:border-emerald-900/40">
+                    <div id="stat-total-plants" class="text-lg font-bold text-emerald-700 dark:text-emerald-300">0</div>
+                    <div class="text-[10px] uppercase font-bold text-slate-500">Flowers</div>
+                </div>
+                <div class="bg-sky-50 dark:bg-sky-950/40 p-3 rounded-2xl border border-sky-100 dark:border-sky-900/40">
+                    <div id="stat-total-watered" class="text-lg font-bold text-sky-700 dark:text-sky-300">0</div>
+                    <div class="text-[10px] uppercase font-bold text-slate-500">Waterings</div>
+                </div>
+                <div class="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-100 dark:border-amber-900/40">
+                    <div id="stat-oldest-age" class="text-lg font-bold text-amber-700 dark:text-amber-300">0d</div>
+                    <div class="text-[10px] uppercase font-bold text-slate-500">Oldest Plant</div>
+                </div>
+            </div>
+
+            <!-- Search / Filter Bar -->
+            <div class="mb-3 relative">
+                <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+                <input type="text" id="journal-search" oninput="renderJournalMemoryList()" placeholder="Search memories, titles, or goals..." class="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <!-- Memories Scroll List -->
+            <div id="journal-memories-list" class="flex-1 overflow-y-auto space-y-2 pr-1 my-2">
+                <!-- Dynamically populated list -->
+            </div>
+
+            <button onclick="closeModal('modal-journal')" class="w-full mt-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs hover:bg-slate-300 transition">
+                Close Journal
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Achievements / Badges Modal -->
+    <div id="modal-achievements" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-800 modal-enter max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-serif font-bold flex items-center gap-2">
+                    <span>🏆 Garden Milestones</span>
+                </h2>
+                <button onclick="closeModal('modal-achievements')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">✕</button>
+            </div>
+
+            <div id="achievements-grid" class="flex-1 overflow-y-auto space-y-3 pr-1">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <button onclick="closeModal('modal-achievements')" class="w-full mt-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs hover:bg-slate-300 transition">
+                Close Badges
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Settings & Storage Backup Modal -->
+    <div id="modal-settings" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-800 modal-enter max-h-[85vh] overflow-y-auto space-y-4">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-xl font-serif font-bold flex items-center gap-2">
+                    <span>⚙️ Garden Settings</span>
+                </h2>
+                <button onclick="closeModal('modal-settings')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">✕</button>
+            </div>
+
+            <!-- Time of Day Override -->
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Time of Day Theme</label>
+                <select id="setting-time-of-day" onchange="changeTimeOfDayTheme(this.value)" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs">
+                    <option value="auto">⏳ Auto (Local Time)</option>
+                    <option value="morning">🌅 Soft Morning</option>
+                    <option value="afternoon">☀️ Bright Afternoon</option>
+                    <option value="evening">🌇 Golden Evening</option>
+                    <option value="night">🌙 Starlight Night</option>
+                </select>
+            </div>
+
+            <!-- Accessibility / Animation -->
+            <div class="flex items-center justify-between py-1">
+                <div>
+                    <p class="text-xs font-semibold">Reduced Motion</p>
+                    <p class="text-[10px] text-slate-500">Disable plant swaying and heavy particles</p>
+                </div>
+                <input type="checkbox" id="setting-reduced-motion" onchange="toggleReducedMotion(this.checked)" class="w-4 h-4 text-emerald-600 rounded">
+            </div>
+
+            <!-- Backup & Export Data -->
+            <div class="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Data Management</label>
+                <div class="flex gap-2">
+                    <button onclick="exportGardenData()" class="flex-1 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-200 transition">
+                        📥 Export JSON
+                    </button>
+                    <button onclick="triggerImportDialog()" class="flex-1 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-200 transition">
+                        📤 Import JSON
+                    </button>
+                    <input type="file" id="import-file-input" onchange="importGardenData(event)" accept=".json" class="hidden">
+                </div>
+            </div>
+
+            <!-- Reset Confirmation -->
+            <div class="border-t border-slate-200 dark:border-slate-800 pt-3">
+                <button onclick="resetGardenData()" class="w-full py-2.5 rounded-xl border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 font-semibold text-xs hover:bg-red-50 dark:hover:bg-red-950/40 transition">
+                    ⚠️ Reset Entire Garden
+                </button>
+            </div>
+
+            <button onclick="closeModal('modal-settings')" class="w-full py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs hover:bg-slate-300 transition">
+                Save & Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification Toast Element -->
+    <div id="toast-notification" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 transform translate-y-4">
+        <div class="bg-slate-900/90 text-white dark:bg-white/90 dark:text-slate-900 text-xs md:text-sm font-medium px-4 py-2.5 rounded-2xl shadow-xl backdrop-blur-md flex items-center gap-2 border border-white/20">
+            <span id="toast-icon">✨</span>
+            <span id="toast-message">Notification text</span>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        
+        // --- 1. DATA CONSTANTS & SPECIES DEFINITIONS ---
+        const SAVE_KEY = 'virtual_friendship_garden_v1';
+        
+        const SPECIES_DATA = {
+            tulip: {
+                id: 'tulip',
+                name: 'Tulip',
+                defaultMeaning: 'Memory',
+                color: '#f43f5e',
+                icon: '🌷',
+                unlockCount: 0,
+                description: 'A classic symbol of deep love and fond memories.'
+            },
+            sunflower: {
+                id: 'sunflower',
+                name: 'Sunflower',
+                defaultMeaning: 'Achievement',
+                color: '#eab308',
+                icon: '🌻',
+                unlockCount: 1,
+                description: 'Stands tall facing the sunlight of accomplishment.'
+            },
+            daisy: {
+                id: 'daisy',
+                name: 'Daisy',
+                defaultMeaning: 'Friendship',
+                color: '#f8fafc',
+                icon: '🌼',
+                unlockCount: 2,
+                description: 'Cheerful and resilient, celebrating bond and joy.'
+            },
+            rose: {
+                id: 'rose',
+                name: 'Rose',
+                defaultMeaning: 'Gratitude',
+                color: '#e11d48',
+                icon: '🌹',
+                unlockCount: 3,
+                description: 'Elegant leaves and rich petals honoring heartfelt moments.'
+            },
+            clover: {
+                id: 'clover',
+                name: 'Clover',
+                defaultMeaning: 'Goal',
+                color: '#22c55e',
+                icon: '🌱',
+                unlockCount: 4,
+                description: 'Sprouts with optimism for future wishes and goals.'
+            },
+            cherry: {
+                id: 'cherry',
+                name: 'Cherry Blossom',
+                defaultMeaning: 'Dream',
+                color: '#f472b6',
+                icon: '🌸',
+                unlockCount: 5,
+                description: 'Delicate sakura blooms capturing magical dreams.'
+            },
+            lavender: {
+                id: 'lavender',
+                name: 'Lavender',
+                defaultMeaning: 'Custom',
+                color: '#a855f7',
+                icon: '🌿',
+                unlockCount: 6,
+                description: 'Peaceful lavender scent bringing calming reflection.'
+            },
+            cactus: {
+                id: 'cactus',
+                name: 'Small Cactus',
+                defaultMeaning: 'Custom',
+                color: '#10b981',
+                icon: '🌵',
+                unlockCount: 7,
+                description: 'Sturdy succulent blooming softly in tough times.'
+            }
+        };
+
+        const ACHIEVEMENTS_LIST = [
+            { id: 'first_seed', name: 'First Seed 🌱', desc: 'Plant your very first flower in the garden.', check: s => s.stats.planted >= 1 },
+            { id: 'gentle_care', name: 'Gentle Care 💧', desc: 'Water plants at least 5 times.', check: s => s.stats.watered >= 5 },
+            { id: 'first_bloom', name: 'First Bloom 🌸', desc: 'Grow a flower into full mature bloom.', check: s => s.plants.some(p => p && p.stage >= 3) },
+            { id: 'green_thumb', name: 'Little Meadow 🏡', desc: 'Fill 6 garden spots with living flowers.', check: s => s.plants.filter(p => p !== null).length >= 6 },
+            { id: 'old_friend', name: 'Old Friend 📜', desc: 'Keep a plant growing for over 3 days.', check: s => s.plants.some(p => p && (Date.now() - p.createdAt) > 3 * 86400000) },
+            { id: 'rain_watcher', name: 'Rain Watcher 🌧️', desc: 'Enjoy the garden while gentle rain falls.', check: (s, env) => env.weather === 'rain' }
+        ];
+
+        // --- 2. GAME STATE MANAGEMENT ---
+        let gameState = {
+            plants: Array(12).fill(null), // 12 soil plots
+            selectedPlotIndex: null,
+            interactionMode: 'inspect', // 'inspect', 'plant', 'water'
+            stats: {
+                planted: 0,
+                watered: 0,
+                createdTime: Date.now()
+            },
+            unlockedAchievements: [],
+            settings: {
+                audioMuted: false,
+                reducedMotion: false,
+                timeOfDayTheme: 'auto'
+            }
+        };
+
+        let currentEnv = {
+            timeOfDay: 'afternoon',
+            weather: 'clear'
+        };
+
+        let activeDetailPlantIndex = null;
+        let selectedSpeciesForPlanting = 'tulip';
+
+        // Initialize Web Audio Engine Context
+        let audioCtx = null;
+
+        function loadGameState() {
+            try {
+                const data = localStorage.getItem(SAVE_KEY);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    gameState = { ...gameState, ...parsed };
+                    // Ensure plants array length is 12
+                    while (gameState.plants.length < 12) gameState.plants.push(null);
+                }
+            } catch (e) {
+                console.warn('Could not load garden save state, starting fresh.', e);
+            }
+        }
+
+        function saveGameState() {
+            try {
+                localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+            } catch (e) {
+                console.error('Failed to save garden state to localStorage', e);
+            }
+        }
+
+        // --- 3. AUDIO ENGINE (Web Audio API Synth) ---
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) audioCtx = new AudioContextClass();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (gameState.settings.audioMuted) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'water') {
+                // Gentle water droplet pitch slide
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'plant') {
+                // Warm soil thud
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(140, now);
+                osc.frequency.exponentialRampToValueAtTime(70, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'bloom') {
+                // Ascending pentatonic chime
+                const freqs = [523.25, 659.25, 783.99, 1046.50];
+                freqs.forEach((f, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = f;
+                    const startTime = now + (idx * 0.08);
+                    gain.gain.setValueAtTime(0.12, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.4);
+                });
+            } else if (type === 'click') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.linearRampToValueAtTime(0.001, now + 0.05);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+        }
+
+        function toggleAudioMute() {
+            gameState.settings.audioMuted = !gameState.settings.audioMuted;
+            document.getElementById('btn-audio').innerHTML = gameState.settings.audioMuted 
+                ? '<span class="material-symbols-outlined text-lg">volume_off</span>' 
+                : '<span class="material-symbols-outlined text-lg">volume_up</span>';
+            saveGameState();
+            showToast(gameState.settings.audioMuted ? 'Muted audio' : 'Audio enabled', gameState.settings.audioMuted ? '🔇' : '🔊');
+        }
+
+        // --- 4. PROCEDURAL PLANT SVG GRAPHICS GENERATOR ---
+        function generatePlantSVG(speciesId, stage, isThirsty = false) {
+            const species = SPECIES_DATA[speciesId] || SPECIES_DATA.tulip;
+            const color = species.color;
+            const opacity = isThirsty ? '0.7' : '1.0';
+            const swayClass = (!gameState.settings.reducedMotion && stage > 0) ? 'animate-sway' : '';
+
+            let innerSVG = '';
+
+            if (stage === 0) {
+                // Stage 0: Fresh Seed Mound
+                innerSVG = `
+                    <ellipse cx="50" cy="88" rx="14" ry="5" fill="#4a3219" opacity="0.6"/>
+                    <circle cx="50" cy="85" r="3" fill="#8c6d58"/>
+                    <path d="M50 85 Q 51 80 53 78" stroke="#a3e635" stroke-width="2" stroke-linecap="round" fill="none"/>
+                `;
+            } else if (stage === 1) {
+                // Stage 1: Young Sprout
+                innerSVG = `
+                    <ellipse cx="50" cy="88" rx="12" ry="4" fill="#382412" opacity="0.5"/>
+                    <path d="M50 88 Q 48 72 50 64" stroke="#65a30d" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <path d="M50 64 Q 40 58 42 68 Z" fill="#84cc16"/>
+                    <path d="M50 64 Q 60 58 58 68 Z" fill="#65a30d"/>
+                `;
+            } else if (stage === 2) {
+                // Stage 2: Young Growing Stem
+                innerSVG = `
+                    <path d="M50 88 Q 46 60 50 42" stroke="#4d7c0f" stroke-width="4" stroke-linecap="round" fill="none"/>
+                    <path d="M50 72 Q 32 66 38 54 Z" fill="#65a30d"/>
+                    <path d="M50 58 Q 68 52 62 40 Z" fill="#4d7c0f"/>
+                    <circle cx="50" cy="40" r="5" fill="${color}" opacity="0.8"/>
+                `;
+            } else if (stage >= 3) {
+                // Stage 3 & 4: Blooming Flower
+                if (speciesId === 'tulip') {
+                    innerSVG = `
+                        <path d="M50 88 Q 45 58 50 34" stroke="#4d7c0f" stroke-width="4" stroke-linecap="round" fill="none"/>
+                        <path d="M50 70 Q 28 62 36 48 Z" fill="#65a30d"/>
+                        <path d="M50 60 Q 72 52 64 38 Z" fill="#4d7c0f"/>
+                        <!-- Tulip Petals -->
+                        <path d="M40 36 Q 50 44 60 36 Q 66 14 50 18 Q 34 14 40 36 Z" fill="${color}"/>
+                        <path d="M45 36 Q 50 42 55 36 Q 58 22 50 24 Q 42 22 45 36 Z" fill="#fff" opacity="0.3"/>
+                    `;
+                } else if (speciesId === 'sunflower') {
+                    innerSVG = `
+                        <path d="M50 88 Q 52 56 50 32" stroke="#3f6212" stroke-width="5" stroke-linecap="round" fill="none"/>
+                        <path d="M50 68 Q 22 60 30 46 Z" fill="#65a30d"/>
+                        <path d="M50 54 Q 78 46 70 32 Z" fill="#4d7c0f"/>
+                        <!-- Sunflower Petals Grid -->
+                        <g transform="translate(50, 30)">
+                            ${Array.from({length: 12}).map((_, i) => `<ellipse cx="0" cy="-16" rx="4" ry="12" fill="${color}" transform="rotate(${i * 30})" />`).join('')}
+                            <circle cx="0" cy="0" r="9" fill="#451a03"/>
+                            <circle cx="0" cy="0" r="6" fill="#78350f" opacity="0.8"/>
+                        </g>
+                    `;
+                } else if (speciesId === 'daisy') {
+                    innerSVG = `
+                        <path d="M50 88 Q 48 58 50 35" stroke="#4d7c0f" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                        <path d="M50 70 Q 30 65 36 55 Z" fill="#65a30d"/>
+                        <!-- Daisy Petals -->
+                        <g transform="translate(50, 32)">
+                            ${Array.from({length: 10}).map((_, i) => `<ellipse cx="0" cy="-14" rx="3.5" ry="10" fill="${color}" transform="rotate(${i * 36})" />`).join('')}
+                            <circle cx="0" cy="0" r="6.5" fill="#f59e0b"/>
+                        </g>
+                    `;
+                } else if (speciesId === 'rose') {
+                    innerSVG = `
+                        <path d="M50 88 Q 53 58 50 34" stroke="#3f6212" stroke-width="4" stroke-linecap="round" fill="none"/>
+                        <path d="M50 68 Q 30 62 38 50 Z" fill="#4d7c0f"/>
+                        <!-- Rose Layers -->
+                        <g transform="translate(50, 32)">
+                            <circle cx="0" cy="0" r="14" fill="${color}"/>
+                            <circle cx="-2" cy="-2" r="10" fill="#be123c"/>
+                            <circle cx="1" cy="1" r="7" fill="${color}"/>
+                            <circle cx="0" cy="0" r="4" fill="#fda4af"/>
+                        </g>
+                    `;
+                } else if (speciesId === 'cherry') {
+                    innerSVG = `
+                        <path d="M50 88 Q 42 62 50 36" stroke="#78350f" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+                        <path d="M50 55 Q 65 48 60 40" stroke="#78350f" stroke-width="3" stroke-linecap="round" fill="none"/>
+                        <!-- Cherry Petals Cluster -->
+                        <g transform="translate(50, 34)">
+                            ${Array.from({length: 5}).map((_, i) => `<circle cx="0" cy="-10" r="7" fill="${color}" transform="rotate(${i * 72})" opacity="0.9" />`).join('')}
+                            <circle cx="0" cy="0" r="4" fill="#fbcfe8"/>
+                        </g>
+                    `;
+                } else if (speciesId === 'cactus') {
+                    innerSVG = `
+                        <path d="M50 88 L50 45" stroke="#059669" stroke-width="18" stroke-linecap="round"/>
+                        <path d="M50 65 Q 35 65 35 52" stroke="#059669" stroke-width="8" stroke-linecap="round" fill="none"/>
+                        <path d="M50 60 Q 65 60 65 48" stroke="#059669" stroke-width="8" stroke-linecap="round" fill="none"/>
+                        <circle cx="50" cy="36" r="6" fill="#ec4899"/>
+                    `;
+                } else {
+                    // Default Lavender/Clover
+                    innerSVG = `
+                        <path d="M50 88 Q 48 55 50 32" stroke="#4d7c0f" stroke-width="3.5" fill="none"/>
+                        <g transform="translate(50, 32)">
+                            <circle cx="0" cy="-12" r="5" fill="${color}"/>
+                            <circle cx="0" cy="-6" r="6" fill="${color}"/>
+                            <circle cx="0" cy="0" r="7" fill="${color}"/>
+                        </g>
+                    `;
+                }
+            }
+
+            return `
+                <svg viewBox="0 0 100 100" class="w-full h-full overflow-visible ${swayClass}" style="opacity: ${opacity}">
+                    ${innerSVG}
+                </svg>
+            `;
+        }
+
+        // --- 5. GARDEN GRID & INTERACTION LOGIC ---
+        function renderGarden() {
+            const gridEl = document.getElementById('garden-grid');
+            gridEl.innerHTML = '';
+
+            const now = Date.now();
+
+            gameState.plants.forEach((plant, index) => {
+                const plot = document.createElement('div');
+                
+                // Determine thirst status (dry if > 36h since last water)
+                const isThirsty = plant ? (now - plant.lastWatered > 36 * 3600 * 1000) : false;
+                const isDrySoil = isThirsty || !plant;
+
+                plot.className = `soil-mound aspect-square rounded-2xl relative cursor-pointer flex items-center justify-center p-1 border ${
+                    isDrySoil 
+                        ? 'bg-amber-900/60 border-amber-800/40' 
+                        : 'bg-amber-950/80 border-amber-700/60'
+                }`;
+
+                if (plant) {
+                    // Calculate real plant growth stage based on elapsed time (Max stage 3)
+                    const ageHours = (now - plant.createdAt) / (1000 * 3600);
+                    let currentStage = plant.stage;
+                    
+                    // Growth progresses if watered recently
+                    if (ageHours > 48 && currentStage < 3 && !isThirsty) {
+                        currentStage = 3;
+                    } else if (ageHours > 12 && currentStage < 2 && !isThirsty) {
+                        currentStage = 2;
+                    } else if (ageHours > 1 && currentStage < 1) {
+                        currentStage = 1;
+                    }
+                    plant.stage = currentStage;
+
+                    // Render Plant SVG inside soil plot
+                    const plantSvgHTML = generatePlantSVG(plant.species, plant.stage, isThirsty);
+                    plot.innerHTML = plantSvgHTML;
+
+                    // Thirsty Badge Indicator
+                    if (isThirsty) {
+                        plot.innerHTML += `
+                            <div class="absolute top-1 right-1 bg-amber-500/90 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow-sm animate-bounce">
+                                💧
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Empty Soil Spot Graphic
+                    plot.innerHTML = `
+                        <div class="opacity-30 hover:opacity-70 transition text-amber-200 text-xs flex flex-col items-center">
+                            <span class="text-base">🕳️</span>
+                        </div>
+                    `;
+                }
+
+                plot.onclick = (e) => handlePlotClick(index, e);
+                gridEl.appendChild(plot);
+            });
+
+            // Update unlocked garden decor based on total plants
+            renderGardenDecorations();
+            checkAchievements();
+        }
+
+        function handlePlotClick(index, event) {
+            const plant = gameState.plants[index];
+            gameState.selectedPlotIndex = index;
+
+            if (gameState.interactionMode === 'plant') {
+                if (plant) {
+                    showToast('Spot already occupied! Select an empty plot.', '⚠️');
+                    return;
+                }
+                openPlantModal(index);
+            } else if (gameState.interactionMode === 'water') {
+                if (!plant) {
+                    showToast('Nothing to water here.', '🌱');
+                    return;
+                }
+                waterPlant(index, event);
+            } else { // Inspect / View Mode
+                if (!plant) {
+                    // Quick offer to plant if inspecting empty spot
+                    openPlantModal(index);
+                    return;
+                }
+                openDetailModal(index);
+            }
+        }
+
+        function waterPlant(index, event) {
+            const plant = gameState.plants[index];
+            if (!plant) return;
+
+            plant.lastWatered = Date.now();
+            gameState.stats.watered++;
+            saveGameState();
+
+            playSound('water');
+
+            // Trigger water particles at click position
+            if (event) {
+                spawnParticles(event.clientX, event.clientY, '#38bdf8', 6);
+            }
+
+            showToast(`Watered "${plant.name}"! 💧`, '✨');
+            renderGarden();
+        }
+
+        function pruneThirstyPlants() {
+            let wateredCount = 0;
+            const now = Date.now();
+            gameState.plants.forEach(plant => {
+                if (plant && (now - plant.lastWatered > 36 * 3600 * 1000)) {
+                    plant.lastWatered = now;
+                    wateredCount++;
+                }
+            });
+
+            if (wateredCount > 0) {
+                gameState.stats.watered += wateredCount;
+                saveGameState();
+                playSound('water');
+                showToast(`Tidied and watered ${wateredCount} thirsty plants!`, '🧹');
+                renderGarden();
+            } else {
+                showToast('All plants are already moist and happy!', '🌿');
+            }
+        }
+
+        // --- 6. MODALS & FORMS ---
+        function openPlantModal(plotIndex) {
+            gameState.selectedPlotIndex = plotIndex;
+            renderSpeciesSelector();
+            document.getElementById('modal-plant').classList.remove('hidden');
+        }
+
+        function renderSpeciesSelector() {
+            const grid = document.getElementById('species-selector-grid');
+            grid.innerHTML = '';
+
+            Object.values(SPECIES_DATA).forEach(species => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                const isSelected = selectedSpeciesForPlanting === species.id;
+                
+                btn.className = `p-2 rounded-xl border flex flex-col items-center gap-1 transition ${
+                    isSelected 
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/50 ring-2 ring-emerald-500/30' 
+                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`;
+
+                btn.onclick = () => {
+                    selectedSpeciesForPlanting = species.id;
+                    renderSpeciesSelector();
+                    playSound('click');
+                };
+
+                btn.innerHTML = `
+                    <span class="text-2xl">${species.icon}</span>
+                    <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate w-full text-center">${species.name}</span>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        function handlePlantSubmit(e) {
+            e.preventDefault();
+            const index = gameState.selectedPlotIndex;
+            if (index === null) return;
+
+            const name = document.getElementById('input-plant-name').value.trim() || 'My Memory';
+            const category = document.getElementById('input-plant-category').value;
+            const note = document.getElementById('input-plant-note').value.trim() || 'A peaceful moment recorded in the garden.';
+
+            const newPlant = {
+                id: 'plant_' + Date.now(),
+                name,
+                category,
+                note,
+                species: selectedSpeciesForPlanting,
+                stage: 0,
+                createdAt: Date.now(),
+                lastWatered: Date.now()
+            };
+
+            gameState.plants[index] = newPlant;
+            gameState.stats.planted++;
+            saveGameState();
+
+            playSound('plant');
+            closeModal('modal-plant');
+            showToast(`Planted "${name}"! 🌱`, '🌸');
+
+            // Reset form fields
+            document.getElementById('input-plant-name').value = '';
+            document.getElementById('input-plant-note').value = '';
+
+            renderGarden();
+        }
+
+        function openDetailModal(index) {
+            activeDetailPlantIndex = index;
+            const plant = gameState.plants[index];
+            if (!plant) return;
+
+            const species = SPECIES_DATA[plant.species] || SPECIES_DATA.tulip;
+
+            document.getElementById('detail-flower-name').textContent = plant.name;
+            document.getElementById('detail-category-badge').textContent = plant.category || 'Memory';
+            document.getElementById('detail-flower-species-meta').textContent = `${species.name} • ${species.icon}`;
+            
+            const dateStr = new Date(plant.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+            document.getElementById('detail-flower-date').textContent = `Planted on ${dateStr}`;
+            document.getElementById('detail-flower-note').textContent = `"${plant.note}"`;
+
+            // SVG Preview
+            document.getElementById('detail-flower-svg-preview').innerHTML = generatePlantSVG(plant.species, plant.stage, false);
+
+            // Growth Progress
+            const progressPct = Math.min(100, Math.round(((plant.stage + 1) / 4) * 100));
+            document.getElementById('detail-growth-percent').textContent = `${progressPct}%`;
+            document.getElementById('detail-growth-bar').style.width = `${progressPct}%`;
+
+            const isThirsty = (Date.now() - plant.lastWatered > 36 * 3600 * 1000);
+            document.getElementById('detail-thirst-status').textContent = isThirsty ? '💧 Looks thirsty! Water it to help it flourish.' : '🌿 Moist and thriving happy!';
+
+            document.getElementById('modal-view-flower').classList.remove('hidden');
+        }
+
+        function waterCurrentDetailPlant() {
+            if (activeDetailPlantIndex !== null) {
+                waterPlant(activeDetailPlantIndex);
+                openDetailModal(activeDetailPlantIndex); // Refresh detail
+            }
+        }
+
+        function editCurrentDetailNote() {
+            if (activeDetailPlantIndex === null) return;
+            const plant = gameState.plants[activeDetailPlantIndex];
+            const newNote = prompt('Edit memory note:', plant.note);
+            if (newNote !== null) {
+                plant.note = newNote.trim() || plant.note;
+                saveGameState();
+                openDetailModal(activeDetailPlantIndex);
+                showToast('Note updated.', '✏️');
+            }
+        }
+
+        function uprootCurrentDetailPlant() {
+            if (activeDetailPlantIndex === null) return;
+            if (confirm('Are you sure you want to gently remove this flower from your garden?')) {
+                gameState.plants[activeDetailPlantIndex] = null;
+                saveGameState();
+                closeModal('modal-view-flower');
+                renderGarden();
+                showToast('Garden plot cleared.', '🌱');
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            playSound('click');
+        }
+
+        // --- 7. JOURNAL & ACHIEVEMENTS SYSTEM ---
+        function openJournalModal() {
+            renderJournalStats();
+            renderJournalMemoryList();
+            document.getElementById('modal-journal').classList.remove('hidden');
+        }
+
+        function renderJournalStats() {
+            const activePlants = gameState.plants.filter(p => p !== null);
+            document.getElementById('stat-total-plants').textContent = activePlants.length;
+            document.getElementById('stat-total-watered').textContent = gameState.stats.watered;
+
+            if (activePlants.length > 0) {
+                const oldest = Math.min(...activePlants.map(p => p.createdAt));
+                const days = Math.floor((Date.now() - oldest) / (1000 * 86400));
+                document.getElementById('stat-oldest-age').textContent = `${days}d`;
+            } else {
+                document.getElementById('stat-oldest-age').textContent = '0d';
+            }
+        }
+
+        function renderJournalMemoryList() {
+            const listEl = document.getElementById('journal-memories-list');
+            listEl.innerHTML = '';
+
+            const query = (document.getElementById('journal-search').value || '').toLowerCase();
+            const activePlants = gameState.plants.filter(p => p !== null);
+
+            const filtered = activePlants.filter(p => 
+                p.name.toLowerCase().includes(query) || 
+                p.note.toLowerCase().includes(query) ||
+                (p.category && p.category.toLowerCase().includes(query))
+            );
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 text-xs italic">
+                        No memories recorded yet. Plant flowers to begin!
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const species = SPECIES_DATA[p.species] || SPECIES_DATA.tulip;
+                const d = new Date(p.createdAt).toLocaleDateString();
+
+                const item = document.createElement('div');
+                item.className = 'p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 flex items-start gap-3';
+                item.innerHTML = `
+                    <span class="text-2xl p-1 bg-white dark:bg-slate-700 rounded-xl shadow-sm">${species.icon}</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-1">
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">${p.name}</h4>
+                            <span class="text-[10px] text-slate-400">${d}</span>
+                        </div>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 italic line-clamp-2 mt-0.5 font-serif">"${p.note}"</p>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        function openAchievementsModal() {
+            renderAchievementsGrid();
+            document.getElementById('modal-achievements').classList.remove('hidden');
+        }
+
+        function checkAchievements() {
+            ACHIEVEMENTS_LIST.forEach(ach => {
+                if (!gameState.unlockedAchievements.includes(ach.id)) {
+                    if (ach.check(gameState, currentEnv)) {
+                        gameState.unlockedAchievements.push(ach.id);
+                        saveGameState();
+                        showToast(`Unlocked Badge: ${ach.name}!`, '🏆');
+                        playSound('bloom');
+                    }
+                }
+            });
+        }
+
+        function renderAchievementsGrid() {
+            const grid = document.getElementById('achievements-grid');
+            grid.innerHTML = '';
+
+            ACHIEVEMENTS_LIST.forEach(ach => {
+                const unlocked = gameState.unlockedAchievements.includes(ach.id);
+                const card = document.createElement('div');
+                card.className = `p-3.5 rounded-2xl border flex items-center gap-3 transition ${
+                    unlocked 
+                        ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/50' 
+                        : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 opacity-60'
+                }`;
+
+                card.innerHTML = `
+                    <div class="text-2xl p-2 rounded-xl ${unlocked ? 'bg-amber-100 dark:bg-amber-900/60' : 'bg-slate-200 dark:bg-slate-700'}">
+                        ${unlocked ? '🏆' : '🔒'}
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">${ach.name}</h4>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${ach.desc}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // --- 8. SETTINGS & EXPORT/IMPORT ---
+        function openSettingsModal() {
+            document.getElementById('setting-time-of-day').value = gameState.settings.timeOfDayTheme;
+            document.getElementById('setting-reduced-motion').checked = gameState.settings.reducedMotion;
+            document.getElementById('modal-settings').classList.remove('hidden');
+        }
+
+        function setInteractionMode(mode) {
+            gameState.interactionMode = mode;
+            ['inspect', 'plant', 'water'].forEach(m => {
+                const btn = document.getElementById(`mode-${m}`);
+                if (btn) {
+                    if (m === mode) {
+                        btn.classList.add('bg-emerald-100', 'dark:bg-emerald-950', 'text-emerald-800', 'dark:text-emerald-200');
+                    } else {
+                        btn.classList.remove('bg-emerald-100', 'dark:bg-emerald-950', 'text-emerald-800', 'dark:text-emerald-200');
+                    }
+                }
+            });
+            playSound('click');
+        }
+
+        function changeTimeOfDayTheme(val) {
+            gameState.settings.timeOfDayTheme = val;
+            saveGameState();
+            applyEnvironmentTheme();
+        }
+
+        function toggleReducedMotion(val) {
+            gameState.settings.reducedMotion = val;
+            saveGameState();
+            renderGarden();
+        }
+
+        function exportGardenData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(gameState, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `friendship_garden_backup_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchorElem.click();
+            showToast('Exported garden JSON data.', '📥');
+        }
+
+        function triggerImportDialog() {
+            document.getElementById('import-file-input').click();
+        }
+
+        function importGardenData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && Array.isArray(parsed.plants)) {
+                        gameState = parsed;
+                        saveGameState();
+                        renderGarden();
+                        applyEnvironmentTheme();
+                        closeModal('modal-settings');
+                        showToast('Garden imported successfully!', '✨');
+                    } else {
+                        alert('Invalid garden JSON backup file.');
+                    }
+                } catch(err) {
+                    alert('Error reading garden file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetGardenData() {
+            if (confirm('Are you sure you want to reset your garden? All planted flowers and memories will be cleared.')) {
+                localStorage.removeItem(SAVE_KEY);
+                location.reload();
+            }
+        }
+
+        // --- 9. ENVIRONMENT, WEATHER & PARTICLES ---
+        function applyEnvironmentTheme() {
+            const body = document.body;
+            body.classList.remove('theme-morning', 'theme-afternoon', 'theme-evening', 'theme-night');
+
+            let mode = gameState.settings.timeOfDayTheme;
+            if (mode === 'auto') {
+                const hour = new Date().getHours();
+                if (hour >= 6 && hour < 11) mode = 'morning';
+                else if (hour >= 11 && hour < 17) mode = 'afternoon';
+                else if (hour >= 17 && hour < 20) mode = 'evening';
+                else mode = 'night';
+            }
+
+            currentEnv.timeOfDay = mode;
+            body.classList.add(`theme-${mode}`);
+
+            const envStatusEl = document.getElementById('env-status');
+            const timeNames = {
+                morning: '🌅 Peaceful Morning',
+                afternoon: '☀️ Bright Afternoon',
+                evening: '🌇 Golden Evening',
+                night: '🌙 Starlight Night'
+            };
+            envStatusEl.textContent = `${timeNames[mode]} • ${currentEnv.weather.toUpperCase()}`;
+
+            spawnEnvironmentParticles();
+        }
+
+        function setWeather(weatherType) {
+            currentEnv.weather = weatherType;
+            applyEnvironmentTheme();
+            playSound('click');
+            showToast(`Weather set to ${weatherType}`, '🌤️');
+        }
+
+        function spawnEnvironmentParticles() {
+            const overlay = document.getElementById('weather-overlay');
+            overlay.innerHTML = '';
+
+            if (currentEnv.weather === 'rain') {
+                for (let i = 0; i < 30; i++) {
+                    const drop = document.createElement('div');
+                    drop.className = 'rain-drop';
+                    drop.style.left = Math.random() * 100 + 'vw';
+                    drop.style.animationDelay = (Math.random() * 0.8) + 's';
+                    drop.style.animationDuration = (0.5 + Math.random() * 0.5) + 's';
+                    overlay.appendChild(drop);
+                }
+            } else if (currentEnv.timeOfDay === 'night') {
+                for (let i = 0; i < 12; i++) {
+                    const firefly = document.createElement('div');
+                    firefly.className = 'firefly-node absolute rounded-full bg-amber-200/90 shadow-md shadow-amber-300';
+                    firefly.style.width = '4px';
+                    firefly.style.height = '4px';
+                    firefly.style.left = (Math.random() * 90 + 5) + 'vw';
+                    firefly.style.top = (Math.random() * 70 + 10) + 'vh';
+                    firefly.style.animationDelay = (Math.random() * 3) + 's';
+                    overlay.appendChild(firefly);
+                }
+            }
+        }
+
+        function renderGardenDecorations() {
+            const container = document.getElementById('garden-decorations');
+            container.innerHTML = '';
+
+            const count = gameState.plants.filter(p => p !== null).length;
+
+            if (count >= 3) container.innerHTML += `<span title="Garden Pebble">🪨</span>`;
+            if (count >= 5) container.innerHTML += `<span title="Hovering Butterfly" class="animate-bounce">🦋</span>`;
+            if (count >= 8) container.innerHTML += `<span title="Cozy Watering Can">🦩</span>`;
+            if (count >= 10) container.innerHTML += `<span title="Lush Shrubbery">🌳</span>`;
+        }
+
+        function spawnParticles(x, y, color, count = 5) {
+            if (gameState.settings.reducedMotion) return;
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle-floating';
+                p.style.backgroundColor = color;
+                p.style.width = (Math.random() * 6 + 3) + 'px';
+                p.style.height = p.style.width;
+                p.style.borderRadius = '50%';
+                p.style.left = x + 'px';
+                p.style.top = y + 'px';
+                document.body.appendChild(p);
+
+                setTimeout(() => p.remove(), 3000);
+            }
+        }
+
+        function showToast(message, icon = '✨') {
+            const toast = document.getElementById('toast-notification');
+            document.getElementById('toast-icon').textContent = icon;
+            document.getElementById('toast-message').textContent = message;
+
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 2500);
+        }
+
+        // --- 10. INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadGameState();
+            setInteractionMode('inspect');
+            applyEnvironmentTheme();
+            renderGarden();
+
+            // Periodic growth tick check (every minute)
+            setInterval(() => {
+                renderGarden();
+            }, 60000);
+        });
+    </script>
+</body>
+</html>
